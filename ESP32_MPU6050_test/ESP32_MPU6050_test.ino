@@ -166,20 +166,26 @@ void setup() {
     Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
     // wait for ready
+    /*
     Serial.println(F("\nSend any character to begin DMP programming and demo: "));
     while (Serial.available() && Serial.read()); // empty buffer
     while (!Serial.available());                 // wait for data
     while (Serial.available() && Serial.read()); // empty buffer again
-
+    */
+    
     // load and configure the DMP
     Serial.println(F("Initializing DMP..."));
     devStatus = mpu.dmpInitialize();
-
+  
+    //           X Accel  Y Accel  Z Accel   X Gyro   Y Gyro   Z Gyro
+    //OFFSETS    -1310,   -4619,    1256,    -140,     -52,     132
     // supply your own gyro offsets here, scaled for min sensitivity
-    mpu.setXGyroOffset(220);
-    mpu.setYGyroOffset(76);
-    mpu.setZGyroOffset(-85);
-    mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+    mpu.setXAccelOffset(-1310); 
+    mpu.setYAccelOffset(-4619); 
+    mpu.setZAccelOffset(1256); 
+    mpu.setXGyroOffset(-140);
+    mpu.setYGyroOffset(-52);
+    mpu.setZGyroOffset(132);
 
     // make sure it worked (returns 0 if so)
     if (devStatus == 0) {
