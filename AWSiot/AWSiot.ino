@@ -8,6 +8,9 @@
 #define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
 #define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
 
+// LED pin definition
+#define FLASHLIGHT_PIN 4
+
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
 
@@ -69,15 +72,19 @@ void messageHandler(String &topic, String &payload) {
 //  StaticJsonDocument<200> doc;
 //  deserializeJson(doc, payload);
 //  const char* message = doc["message"];
+  digitalWrite(FLASHLIGHT,HIGH);
+  delay(1000);
+  digitalWrite(FLASHLIGHT,LOW);
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  pinMode(LED_PIN,OUTPUT);
   connectAWS();
 }
 
 void loop() {
-  publishMessage();
+  //publishMessage();
   client.loop();
   delay(1000);
 }
