@@ -9,3 +9,7 @@ install ESP32 from board manager
 
 ### imu.ino
 - From library manager, install MPU6050 by Electronic Cats
+
+### MotorTest.imu
+- From library manager, install ServoESP32
+- ESCs take 50Hz PWM signal. Lowest pulse width is 1ms, highest is 2ms. 
