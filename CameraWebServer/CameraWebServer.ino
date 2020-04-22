@@ -1,6 +1,13 @@
 #include "esp_camera.h"
 #include "esp_timer.h"
 #include "img_converters.h"
+#include "Arduino.h"
+#include "fb_gfx.h"
+#include "fd_forward.h"
+#include "fr_forward.h"
+#include "soc/timer_group_struct.h" // Disable watchdog timer
+#include "soc/timer_group_reg.h"    // Disable watchdog timer
+#include "driver/rtc_io.h"
 #include "camera_pins.h"
 #include "mbedtls/base64.h"
 #include "secrets.h"
@@ -8,11 +15,6 @@
 #include <WiFi.h>
 #include <MQTTClient.h>
 #include <ArduinoJson.h>
-#include "fb_gfx.h"
-#include "fd_forward.h"
-#include "fr_forward.h"
-#include "soc/timer_group_struct.h" // Disable watchdog timer
-#include "soc/timer_group_reg.h"    // Disable watchdog timer
 
 // The MQTT topics that this device should publish/subscribe
 #define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
@@ -59,7 +61,7 @@ void connectAWS()
   // Subscribe to a topic
   client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
 
-  Serial.println("\nAWS IoT Connected!\n");
+  Serial.println("AWS IoT Connected!\n");
 }
 
 void messageHandler(String &topic, String &payload) {
@@ -72,21 +74,19 @@ void messageHandler(String &topic, String &payload) {
 
 void publishMessage()
 {
-  Serial.println("hello!\n");
   // Take Picture with Camera
-  camera_fb_t *fb = NULL;
+  camera_fb_t * fb = NULL;
   fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("Camera capture failed");
     return;
   }
+  Serial.println("hello!\n");
 
   // Publish picture
   const char* pic_buf = (const char*)(fb->buf);
   size_t length = fb->len;
-  Serial.println("hi");
-  unsigned char image[9000];
-  Serial.println("hello");
+  unsigned char image[5000];
   size_t olen;
 
   int err = mbedtls_base64_encode(image, sizeof(image), &olen, fb->buf, length);
@@ -146,8 +146,8 @@ void publishMessage()
 
 void setup() {
   Serial.begin(115200);
-  Serial.setDebugOutput(true);
-  Serial.println();
+  //Serial.setDebugOutput(true);
+  //Serial.println();
 
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -169,14 +169,14 @@ void setup() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
-  config.pixel_format = PIXFORMAT_JPEG;
-  //init with high specs to pre-allocate larger buffers
+  config.pixel_format = PIXFORMAT_JPEG; 
+  
   if(psramFound()){
-    config.frame_size = FRAMESIZE_QQVGA;
+    config.frame_size = FRAMESIZE_QVGA; // FRAMESIZE_ + QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
     config.jpeg_quality = 10;
     config.fb_count = 2;
   } else {
-    config.frame_size = FRAMESIZE_QQVGA;
+    config.frame_size = FRAMESIZE_QVGA;
     config.jpeg_quality = 12;
     config.fb_count = 1;
   }
