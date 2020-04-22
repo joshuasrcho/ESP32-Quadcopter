@@ -7,12 +7,14 @@
 #include "fr_forward.h"
 #include "soc/timer_group_struct.h" // Disable watchdog timer
 #include "soc/timer_group_reg.h"    // Disable watchdog timer
+#include "soc/soc.h"           // Disable brownout problems
+#include "soc/rtc_cntl_reg.h"  // Disable brownout problems
 #include "driver/rtc_io.h"
 #include "camera_pins.h"
 #include "mbedtls/base64.h"
 #include "secrets.h"
 #include <WiFiClientSecure.h>
-#include <WiFi.h>
+#include "WiFi.h"
 #include <MQTTClient.h>
 #include <ArduinoJson.h>
 
@@ -22,6 +24,86 @@
 
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
+
+void messageHandler(String &topic, String &payload) {
+  Serial.println("incoming: " + topic + " - " + payload);
+
+//  StaticJsonDocument<200> doc;
+//  deserializeJson(doc, payload);
+//  const char* message = doc["message"];
+}
+
+void publishMessage()
+{
+  // Take Picture with Camera
+  camera_fb_t * fb = NULL;
+  fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("Camera capture failed");
+    return;
+  }
+
+  // Publish picture
+  const char* pic_buf = (const char*)(fb->buf);
+  size_t length = fb->len;
+  //unsigned char image[100000];
+  size_t olen;
+
+  //int err = mbedtls_base64_encode(image, sizeof(image), &olen, fb->buf, length);
+  //String img((const __FlashStringHelper*) image);
+  Serial.println("buffer is " + String(/*img.*/length/*()*/) + " bytes");
+  int packet_size = 200;
+  String packets = "";
+  float pack = float(/*img.*/length/*()*/) / packet_size;
+  if ( float(pack / int(pack)) > 1){
+    packets = String(int(pack) + 1);
+  }
+  else{
+    packets = String(int(pack));
+  }
+  Serial.println("Total number of packets is: " + packets);
+  
+  String subs;
+  StaticJsonDocument<200> doc;
+  int i = 0;
+  sendimage:
+    subs = "";
+    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_feed = 1;
+    TIMERG0.wdt_wprotect = 0;
+  if (i < packets.toInt() - 1){
+    for (int j = 0; j < packet_size; j++){
+      subs += /*img*/pic_buf[j + i * packet_size];
+    }
+  }
+  else{
+    for (int j = 0; j < /*img.*/length/*()*/ - i * packet_size; j++){
+      subs += /*img*/pic_buf[j + i * packet_size];
+    }
+  }
+  Serial.println("Packet size: " + String(subs.length()) + " of total size: " + String(/*img.*/length/*()*/));
+  uint16_t packetIdPubTemp = client.publish( AWS_IOT_PUBLISH_TOPIC, subs.c_str(), subs.length());
+
+  if ( !packetIdPubTemp  ){
+    Serial.println( "Sending Failed! err: " + String( packetIdPubTemp ) );
+  }
+  else{
+    Serial.println("Packet " + String(i + 1) + " of total " + packets + " published.");
+  }
+  delay(5);
+  i++;
+  if (i < packets.toInt()){
+    goto sendimage;
+  }
+  if ( packetIdPubTemp  ){
+    Serial.println("MQTT Publish succesful");
+    //published = true;
+  }
+
+  // No delay result in no message sent.
+  delay(200);
+  esp_camera_fb_return(fb);
+}
 
 void connectAWS()
 {
@@ -64,87 +146,12 @@ void connectAWS()
   Serial.println("AWS IoT Connected!\n");
 }
 
-void messageHandler(String &topic, String &payload) {
-  Serial.println("incoming: " + topic + " - " + payload);
 
-//  StaticJsonDocument<200> doc;
-//  deserializeJson(doc, payload);
-//  const char* message = doc["message"];
-}
-
-void publishMessage()
-{
-  // Take Picture with Camera
-  camera_fb_t * fb = NULL;
-  fb = esp_camera_fb_get();
-  if (!fb) {
-    Serial.println("Camera capture failed");
-    return;
-  }
-  Serial.println("hello!\n");
-
-  // Publish picture
-  const char* pic_buf = (const char*)(fb->buf);
-  size_t length = fb->len;
-  unsigned char image[5000];
-  size_t olen;
-
-  int err = mbedtls_base64_encode(image, sizeof(image), &olen, fb->buf, length);
-  String img((const __FlashStringHelper*) image);
-  Serial.println("buffer is " + String(img.length()) + " bytes");
-  int packet_size = 5000;
-  String packets = "";
-  float pack = float(img.length()) / packet_size;
-  if ( float(pack / int(pack)) > 1){
-    packets = String(int(pack) + 1);
-  }
-  else{
-    packets = String(int(pack));
-  }
-  Serial.println("Total number of packets is: " + packets);
-  
-  String subs;
-  int i = 0;
-  sendimage:
-    subs = "";
-    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_feed = 1;
-    TIMERG0.wdt_wprotect = 0;
-  if (i < packets.toInt() - 1){
-    for (int j = 0; j < packet_size; j++){
-      subs += img[j + i * packet_size];
-    }
-  }
-  else{
-    for (int j = 0; j < img.length() - i * packet_size; j++){
-      subs += img[j + i * packet_size];
-    }
-  }
-  Serial.println("Packet size: " + String(subs.length()) + " of total size: " + String(img.length()));
-  uint16_t packetIdPubTemp = client.publish( AWS_IOT_PUBLISH_TOPIC,subs.c_str(), subs.length());
-
-  if ( !packetIdPubTemp  ){
-    Serial.println( "Sending Failed! err: " + String( packetIdPubTemp ) );
-  }
-  else{
-    Serial.println("Packet " + String(i + 1) + " of total " + packets + " published.");
-  }
-  delay(800);
-  i++;
-  if (i < packets.toInt()){
-    goto sendimage;
-  }
-  if ( packetIdPubTemp  ){
-    Serial.println("MQTT Publish succesful");
-    //published = true;
-  }
-
-  // No delay result in no message sent.
-  delay(200);
-  esp_camera_fb_return(fb);
-}
 
 void setup() {
+  
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+  
   Serial.begin(115200);
   //Serial.setDebugOutput(true);
   //Serial.println();
