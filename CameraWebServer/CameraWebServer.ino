@@ -1,24 +1,148 @@
 #include "esp_camera.h"
-#include <WiFi.h>
-
-//
-// WARNING!!! Make sure that you have either selected ESP32 Wrover Module,
-//            or another board which has PSRAM enabled
-//
-
-// Select camera model
-//#define CAMERA_MODEL_WROVER_KIT
-//#define CAMERA_MODEL_ESP_EYE
-//#define CAMERA_MODEL_M5STACK_PSRAM
-//#define CAMERA_MODEL_M5STACK_WIDE
-#define CAMERA_MODEL_AI_THINKER
-
+#include "esp_timer.h"
+#include "img_converters.h"
 #include "camera_pins.h"
+#include "mbedtls/base64.h"
+#include "secrets.h"
+#include <WiFiClientSecure.h>
+#include <WiFi.h>
+#include <MQTTClient.h>
+#include <ArduinoJson.h>
+#include "fb_gfx.h"
+#include "fd_forward.h"
+#include "fr_forward.h"
+#include "soc/timer_group_struct.h" // Disable watchdog timer
+#include "soc/timer_group_reg.h"    // Disable watchdog timer
 
-const char* ssid = "HappyJoy";
-const char* password = "6608ohla";
+// The MQTT topics that this device should publish/subscribe
+#define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
+#define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
 
-void startCameraServer();
+WiFiClientSecure net = WiFiClientSecure();
+MQTTClient client = MQTTClient(256);
+
+void connectAWS()
+{
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  Serial.println("Connecting to Wi-Fi");
+
+  while (WiFi.status() != WL_CONNECTED){
+    delay(500);
+    Serial.print(".");
+  }
+
+  // Configure WiFiClientSecure to use the AWS IoT device credentials
+  net.setCACert(AWS_CERT_CA);
+  net.setCertificate(AWS_CERT_CRT);
+  net.setPrivateKey(AWS_CERT_PRIVATE);
+
+  // Connect to the MQTT broker on the AWS endpoint we defined earlier
+  client.begin(AWS_IOT_ENDPOINT, 8883, net);
+
+  // Create a message handler
+  client.onMessage(messageHandler);
+
+  Serial.print("Connecting to AWS IoT\n");
+
+  while (!client.connect(THINGNAME)) {
+    Serial.print(".");
+    delay(100);
+  }
+
+  if(!client.connected()){
+    Serial.println("AWS IoT Timeout!");
+    return;
+  }
+
+  // Subscribe to a topic
+  client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
+
+  Serial.println("\nAWS IoT Connected!\n");
+}
+
+void messageHandler(String &topic, String &payload) {
+  Serial.println("incoming: " + topic + " - " + payload);
+
+//  StaticJsonDocument<200> doc;
+//  deserializeJson(doc, payload);
+//  const char* message = doc["message"];
+}
+
+void publishMessage()
+{
+  Serial.println("hello!\n");
+  // Take Picture with Camera
+  camera_fb_t *fb = NULL;
+  fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("Camera capture failed");
+    return;
+  }
+
+  // Publish picture
+  const char* pic_buf = (const char*)(fb->buf);
+  size_t length = fb->len;
+  Serial.println("hi");
+  unsigned char image[9000];
+  Serial.println("hello");
+  size_t olen;
+
+  int err = mbedtls_base64_encode(image, sizeof(image), &olen, fb->buf, length);
+  String img((const __FlashStringHelper*) image);
+  Serial.println("buffer is " + String(img.length()) + " bytes");
+  int packet_size = 5000;
+  String packets = "";
+  float pack = float(img.length()) / packet_size;
+  if ( float(pack / int(pack)) > 1){
+    packets = String(int(pack) + 1);
+  }
+  else{
+    packets = String(int(pack));
+  }
+  Serial.println("Total number of packets is: " + packets);
+  
+  String subs;
+  int i = 0;
+  sendimage:
+    subs = "";
+    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_feed = 1;
+    TIMERG0.wdt_wprotect = 0;
+  if (i < packets.toInt() - 1){
+    for (int j = 0; j < packet_size; j++){
+      subs += img[j + i * packet_size];
+    }
+  }
+  else{
+    for (int j = 0; j < img.length() - i * packet_size; j++){
+      subs += img[j + i * packet_size];
+    }
+  }
+  Serial.println("Packet size: " + String(subs.length()) + " of total size: " + String(img.length()));
+  uint16_t packetIdPubTemp = client.publish( AWS_IOT_PUBLISH_TOPIC,subs.c_str(), subs.length());
+
+  if ( !packetIdPubTemp  ){
+    Serial.println( "Sending Failed! err: " + String( packetIdPubTemp ) );
+  }
+  else{
+    Serial.println("Packet " + String(i + 1) + " of total " + packets + " published.");
+  }
+  delay(800);
+  i++;
+  if (i < packets.toInt()){
+    goto sendimage;
+  }
+  if ( packetIdPubTemp  ){
+    Serial.println("MQTT Publish succesful");
+    //published = true;
+  }
+
+  // No delay result in no message sent.
+  delay(200);
+  esp_camera_fb_return(fb);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -48,19 +172,14 @@ void setup() {
   config.pixel_format = PIXFORMAT_JPEG;
   //init with high specs to pre-allocate larger buffers
   if(psramFound()){
-    config.frame_size = FRAMESIZE_UXGA;
+    config.frame_size = FRAMESIZE_QQVGA;
     config.jpeg_quality = 10;
     config.fb_count = 2;
   } else {
-    config.frame_size = FRAMESIZE_SVGA;
+    config.frame_size = FRAMESIZE_QQVGA;
     config.jpeg_quality = 12;
     config.fb_count = 1;
   }
-
-#if defined(CAMERA_MODEL_ESP_EYE)
-  pinMode(13, INPUT_PULLUP);
-  pinMode(14, INPUT_PULLUP);
-#endif
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
@@ -69,38 +188,11 @@ void setup() {
     return;
   }
 
-  sensor_t * s = esp_camera_sensor_get();
-  //initial sensors are flipped vertically and colors are a bit saturated
-  if (s->id.PID == OV3660_PID) {
-    s->set_vflip(s, 1);//flip it back
-    s->set_brightness(s, 1);//up the blightness just a bit
-    s->set_saturation(s, -2);//lower the saturation
-  }
-  //drop down frame size for higher initial frame rate
-  s->set_framesize(s, FRAMESIZE_QVGA);
-
-#if defined(CAMERA_MODEL_M5STACK_WIDE)
-  s->set_vflip(s, 1);
-  s->set_hmirror(s, 1);
-#endif
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("WiFi connected");
-
-  startCameraServer();
-
-  Serial.print("Camera Ready! Use 'http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("' to connect");
+  connectAWS();
+  publishMessage();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  client.loop();
   delay(10000);
 }
