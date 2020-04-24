@@ -59,7 +59,7 @@ void publishMessage()
 {
   StaticJsonDocument<200> doc;
   doc["time"] = millis();
-  doc["sensor_a0"] = analogRead(0);
+  doc["message"] = "Hello, there!";
   char jsonBuffer[512];
   serializeJson(doc, jsonBuffer); // print to client
 
@@ -72,19 +72,19 @@ void messageHandler(String &topic, String &payload) {
 //  StaticJsonDocument<200> doc;
 //  deserializeJson(doc, payload);
 //  const char* message = doc["message"];
-  digitalWrite(FLASHLIGHT,HIGH);
+  digitalWrite(FLASHLIGHT_PIN,HIGH);
   delay(1000);
-  digitalWrite(FLASHLIGHT,LOW);
+  digitalWrite(FLASHLIGHT_PIN,LOW);
 }
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LED_PIN,OUTPUT);
+  pinMode(FLASHLIGHT_PIN,OUTPUT);
   connectAWS();
 }
 
 void loop() {
-  //publishMessage();
+  publishMessage();
   client.loop();
-  delay(1000);
+  delay(10000);
 }

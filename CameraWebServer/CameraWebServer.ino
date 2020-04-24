@@ -10,13 +10,14 @@
 #include "soc/soc.h"           // Disable brownout problems
 #include "soc/rtc_cntl_reg.h"  // Disable brownout problems
 #include "driver/rtc_io.h"
-#include "camera_pins.h"
-#include "mbedtls/base64.h"
-#include "secrets.h"
-#include <WiFiClientSecure.h>
+
 #include "WiFi.h"
+#include <WiFiClientSecure.h>
 #include <MQTTClient.h>
 #include <ArduinoJson.h>
+
+#include "secrets.h" // contains sensitive information
+#include "camera_pins.h"
 
 // The MQTT topics that this device should publish/subscribe
 #define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
@@ -46,15 +47,12 @@ void publishMessage()
   // Publish picture
   const char* pic_buf = (const char*)(fb->buf);
   size_t length = fb->len;
-  //unsigned char image[100000];
   size_t olen;
 
-  //int err = mbedtls_base64_encode(image, sizeof(image), &olen, fb->buf, length);
-  //String img((const __FlashStringHelper*) image);
-  Serial.println("buffer is " + String(/*img.*/length/*()*/) + " bytes");
+  Serial.println("buffer is " + String(length) + " bytes");
   int packet_size = 200;
   String packets = "";
-  float pack = float(/*img.*/length/*()*/) / packet_size;
+  float pack = float(length) / packet_size;
   if ( float(pack / int(pack)) > 1){
     packets = String(int(pack) + 1);
   }
@@ -64,7 +62,6 @@ void publishMessage()
   Serial.println("Total number of packets is: " + packets);
   
   String subs;
-  StaticJsonDocument<200> doc;
   int i = 0;
   sendimage:
     subs = "";
@@ -73,15 +70,16 @@ void publishMessage()
     TIMERG0.wdt_wprotect = 0;
   if (i < packets.toInt() - 1){
     for (int j = 0; j < packet_size; j++){
-      subs += /*img*/pic_buf[j + i * packet_size];
+      subs += pic_buf[j + i * packet_size];
     }
   }
   else{
-    for (int j = 0; j < /*img.*/length/*()*/ - i * packet_size; j++){
-      subs += /*img*/pic_buf[j + i * packet_size];
+    for (int j = 0; j < length - i * packet_size; j++){
+      subs += pic_buf[j + i * packet_size];
     }
   }
-  Serial.println("Packet size: " + String(subs.length()) + " of total size: " + String(/*img.*/length/*()*/));
+  Serial.println("Packet size: " + String(subs.length()) + " of total size: " + String(length));
+  
   uint16_t packetIdPubTemp = client.publish( AWS_IOT_PUBLISH_TOPIC, subs.c_str(), subs.length());
 
   if ( !packetIdPubTemp  ){
@@ -97,7 +95,6 @@ void publishMessage()
   }
   if ( packetIdPubTemp  ){
     Serial.println("MQTT Publish succesful");
-    //published = true;
   }
 
   // No delay result in no message sent.
