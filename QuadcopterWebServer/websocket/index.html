@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>ESP32 Quadcopter Camera Test</title>
+</head>
+
+<body>
+  <div class="Header">
+    <h1> Image Stream </h1>
+  </div>
+  <div style="width:100%; padding: 20px; overflow-y: scroll;">
+    <div class="6u$ 12u$(medium)">
+      <img id="image" alt="Looking for image..." />
+    </div>
+  </div>
+
+  <script>
+    var ws = new WebSocket("ws://54.183.113.66:8888/websocket");
+
+    ws.onmessage = function(evt) {
+      var image = document.getElementById('image');
+      image.src = 'data:image/jpeg;base64,' + evt.data;
+    };
+  </script>
+</body>
+
+</html>

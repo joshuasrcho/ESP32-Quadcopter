@@ -10,11 +10,13 @@ class MainHandler(tornado.web.RequestHandler):
 
     def post(self):
         data = self.request.body
+        print("Image received")
         result_file = 'test'
         with open(result_file, 'wb') as file_handler:
             file_handler.write(data)
             Image.open(result_file).save(result_file + '.jpg', 'JPEG')
         os.remove(result_file)
+        print("Image saved")
 
 class MyStaticFileHandler(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
