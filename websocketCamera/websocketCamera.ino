@@ -1,6 +1,5 @@
-// Wifi and http stuff
+// Wifi and websocket stuff
 #include <WiFi.h>
-#include <HTTPClient.h>
 #include <ArduinoWebsockets.h>
 
 // Camera stuff
@@ -19,12 +18,6 @@
 
 // sensitive network info
 #include "secrets.h"
-
-// the following variables are unsigned longs because the time, measured in
-// milliseconds, will quickly become a bigger number than can be stored in an int.
-unsigned long lastTime = 0;
-// Set timer to 1 seconds (1000)
-unsigned long timerDelay = 1000;
 
 camera_fb_t * fb = NULL; // camera capture data
 bool wsConnected;

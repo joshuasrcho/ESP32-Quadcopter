@@ -18,9 +18,10 @@ class SimpleWebSocket(tornado.websocket.WebSocketHandler):
         self.connections.add(self)
 
     def on_message(self, message):
-        base64Message = base64.b64encode(message)
-        [client.write_message(base64Message) for client in self.connections]
-
+        [client.write_message(message) for client in self.connections]
+        print(message)
+        #base64Message = base64.b64encode(message)
+        #[client.write_message(base64Message) for client in self.connections]
     def on_close(self):
         self.connections.remove(self)
 
