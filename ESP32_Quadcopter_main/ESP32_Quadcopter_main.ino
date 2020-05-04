@@ -23,14 +23,11 @@ void setup() {
 
 void loop() {
   int* ref = getControlReference();
-  Serial.print("throttle: ");
-  Serial.print(ref[0]);
-  Serial.print(" yaw: ");
-  Serial.print(ref[1]);
-  Serial.print(" roll: ");
-  Serial.print(ref[2]);
-  Serial.print(" pitch: ");
-  Serial.println(ref[3]);
+  Serial.print("throttle: "); Serial.print(ref[0]);
+  Serial.print(" yaw: "); Serial.print(ref[1]);
+  Serial.print(" roll: "); Serial.print(ref[2]);
+  Serial.print(" pitch: "); Serial.println(ref[3]);
+  
   FRESC.write(ref[0]+40);
   FLESC.write(ref[0]+40);
   RRESC.write(ref[0]+40);

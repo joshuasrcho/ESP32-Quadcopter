@@ -1,0 +1,78 @@
+* {
+  box-sizing: border-box;
+  font-family: 'Red Hat Text', sans-serif;
+}
+
+body {
+  width: 960px;
+  padding: 0px;
+  margin: 0 auto;
+}
+
+.header {
+  display: block;
+  margin-top: 10px;
+  margin-left: 20px;
+}
+
+.row {
+  width: 950px;
+  height: 500px;
+  display: inline-flex;
+  clear: both;
+}
+
+.columnLeft {
+  float: none;
+  min-width: 260px;
+}
+
+.columnCentral {
+  float: none;
+  width: 70%;
+}
+
+.columnRight {
+  float: none;
+  min-width: 260px;
+}
+
+.image-box {
+  display: block;
+  width: 90%;
+  height: 80%;
+  margin: 5% auto;
+  background-color: lightblue;
+}
+
+.data {
+  display: block;
+  margin-top: 10%;
+  margin-left: 12%;
+  font-size: 18px;
+}
+
+.buttons {
+  margin-top: 10px;
+  margin-left: 30%
+}
+
+#joy1Div {
+  width: 200px;
+  height: 200px;
+  margin: 30px;
+}
+
+#joy2Div {
+  width: 200px;
+  height: 200px;
+  margin: 30px;
+}
+
+#joystick1 {
+  border: 5px solid #FF0000;
+}
+
+#joystick2 {
+  border: 5px solid #FF0000;
+}

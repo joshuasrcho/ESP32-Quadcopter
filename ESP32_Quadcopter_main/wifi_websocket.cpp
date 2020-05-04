@@ -27,7 +27,6 @@ void onMessageCallback(WebsocketsMessage message) {
     
     // msg is a JSON object that goes like "{\"throttle\":150,\"yaw\":20,\"pitch\":25,\"roll\":25}"
     const char* msg = (message.data()).c_str();
-    
     deserializeJson(doc,msg);
     
     controlReference[0] = doc["throttle"];

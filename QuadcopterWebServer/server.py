@@ -1,35 +1,77 @@
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
-from PIL import Image
+import base64
+import sys
 import os
+import asyncio
+
+settings = {
+    "static_path": os.path.join(os.path.dirname(__file__), "static")
+}
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('index.html')
+        self.render("joystick.html")
 
-    def post(self):
-        data = self.request.body
-        print("Image received")
-        result_file = 'test'
-        with open(result_file, 'wb') as file_handler:
-            file_handler.write(data)
-            Image.open(result_file).save(result_file + '.jpg', 'JPEG')
-        os.remove(result_file)
-        print("Image saved")
+class WSHandler(tornado.websocket.WebSocketHandler):
+    connections = set()
+    def check_origin(self, origin):
+        return True
 
-class MyStaticFileHandler(tornado.web.StaticFileHandler):
-    def set_extra_headers(self, path):
-        # Disable cache
-        self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    def open(self):
+        self.connections.add(self)
+
+    def on_message(self, message):
+        [client.write_message(message) for client in FlightWSHandler.connections]
+        print(message)
+
+    def on_close(self):
+        self.connections.remove(self)
+
+class CameraWSHandler(tornado.websocket.WebSocketHandler):
+    connections = set()
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        self.connections.add(self)
+
+    def on_message(self, message):
+        base64Message = base64.b64encode(message)
+        [client.write_message(base64Message) for client in WSHandler.connections]
+
+    def on_close(self):
+        self.connections.remove(self)
+
+class FlightWSHandler(tornado.websocket.WebSocketHandler):
+    connections = set()
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        self.connections.add(self)
+
+    def on_message(self, message):
+        pass
+
+    def on_close(self):
+        self.connections.remove(self)
 
 def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
-        (r"/(.*)",MyStaticFileHandler, {"path": "./"},),
-    ])
+        (r"/websocket", WSHandler),
+        (r"/camera", CameraWSHandler),
+        (r"/flight-control", FlightWSHandler),
+        (r"/static/(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
+    ],**settings)
 
 if __name__ == "__main__":
+    # If running on a Windows machine, use WindowsSelectorEventLoopPolicy
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # Initialize server, listen to port 8888
     app = make_app()
     app.listen(8888)
     tornado.ioloop.IOLoop.current().start()

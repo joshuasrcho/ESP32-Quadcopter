@@ -1,0 +1,164 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>ESP32 Quadcopter</title>
+  <!--<link rel="shortcut icon" type="image/png" href="http://bobboteck.github.io/img/roberto-damico-bobboteck.png">-->
+  <link rel="stylesheet" href="{{static_url("joystick.css")}}">
+  <script src="{{static_url("joystick.js")}}"></script>
+</head>
+
+<body>
+  <div class="header">
+    <button onclick="openFullscreen();">Fullscreen</button>
+  </div>
+
+  <div class="row">
+    <div class="columnLeft">
+      <div id="joy1Div"></div>
+      <div class="data">
+        Dir <input id="joy1Direction" type="text" /><br />
+        X <input id="joy1X" type="text" /></br>
+        Y <input id="joy1Y" type="text" />
+      </div>
+      <div class="buttons">
+        <button type="button" name="arm" style="width:100px;height:50px;font-size:24px;">Arm</button><br>
+      </div>
+
+    </div>
+    <div class="columnCentral">
+      <div class="image-box">
+        <img id="image" alt="Looking for image..." />
+      </div>
+    </div>
+    <div class="columnRight">
+      <div id="joy2Div"></div>
+      <div class="data">
+        Dir <input id="joy2Direction" type="text" /><br />
+        X <input id="joy2X" type="text" /></br>
+        Y <input id="joy2Y" type="text" />
+      </div>
+      <div class="buttons">
+        <button type="button" name="stop" style="width:100px;height:50px;font-size:24px;">Stop</button>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+    var ws = new WebSocket("ws://54.183.113.66:8888/websocket");
+
+    // **********************************************
+    // Handle incoming image data
+    // **********************************************
+    ws.onmessage = function(evt) {
+      var image = document.getElementById('image');
+      image.src = 'data:image/jpeg;base64,' + evt.data;
+    };
+
+    // **********************************************
+    // Joystick
+    // **********************************************
+    var joy1Param = {
+      "title": "joystick1",
+      "internalFillColor": '#f09567',
+      "externalStrokeColor": '#f09567',
+      "autoReturnToCenter": true
+    };
+    var Joy1 = new JoyStick('joy1Div', joy1Param);
+
+    var joy1IinputPosX = document.getElementById("joy1PosizioneX");
+    var joy1InputPosY = document.getElementById("joy1PosizioneY");
+    var joy1Direction = document.getElementById("joy1Direction");
+    var joy1X = document.getElementById("joy1X");
+    var joy1Y = document.getElementById("joy1Y");
+
+    setInterval(function() {
+      joy1IinputPosX.value = Joy1.GetPosX();
+    }, 50);
+    setInterval(function() {
+      joy1InputPosY.value = Joy1.GetPosY();
+    }, 50);
+    setInterval(function() {
+      joy1Direction.value = Joy1.GetDir();
+    }, 50);
+    setInterval(function() {
+      joy1X.value = Joy1.GetX();
+    }, 50);
+    setInterval(function() {
+      joy1Y.value = Joy1.GetY();
+    }, 50);
+
+    // Create JoyStick object into the DIV 'joy2Div'
+    var joy2Param = {
+      "title": "joystick2",
+      "internalFillColor": '#f09567',
+      "externalStrokeColor": '#f09567',
+      "autoReturnToCenter": true
+    };
+    var Joy2 = new JoyStick('joy2Div', joy2Param);
+
+    var joy2IinputPosX = document.getElementById("joy2PosizioneX");
+    var joy2InputPosY = document.getElementById("joy2PosizioneY");
+    var joy2Direction = document.getElementById("joy2Direction");
+    var joy2X = document.getElementById("joy2X");
+    var joy2Y = document.getElementById("joy2Y");
+
+    setInterval(function() {
+      joy2IinputPosX.value = Joy2.GetPosX();
+    }, 50);
+    setInterval(function() {
+      joy2InputPosY.value = Joy2.GetPosY();
+    }, 50);
+    setInterval(function() {
+      joy2Direction.value = Joy2.GetDir();
+    }, 50);
+    setInterval(function() {
+      joy2X.value = Joy2.GetX();
+    }, 50);
+    setInterval(function() {
+      joy2Y.value = Joy2.GetY();
+    }, 50);
+
+    // **********************************************
+    // Fullscreen
+    // **********************************************
+    /* Get the documentElement (<html>) to display the page in fullscreen */
+    var elem = document.documentElement;
+
+    /* View in fullscreen */
+    function openFullscreen() {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        /* Firefox */
+        elem.mozRequestFullScreen();
+      } else if (elem.webkitRequestFullscreen) {
+        /* Chrome, Safari and Opera */
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        /* IE/Edge */
+        elem.msRequestFullscreen();
+      }
+    }
+
+    /* Close fullscreen */
+    function closeFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        /* Firefox */
+        document.mozCancelFullScreen();
+      } else if (document.webkitExitFullscreen) {
+        /* Chrome, Safari and Opera */
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        /* IE/Edge */
+        document.msExitFullscreen();
+      }
+    }
+  </script>
+</body>
+
+</html>

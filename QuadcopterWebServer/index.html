@@ -1,11 +1,69 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title>ESP32 Quadcopter</title>
-  </head>
-  <body>
-    <h1> Hello! This is the captured image.</h1>
-    <img src="test.jpg" alt="oops no image"/>
-  </body>
+<html>
+
+<head>
+  <title>ESP32 Quadcopter Camera Test</title>
+</head>
+
+<body>
+  <div class="Header">
+    <h1> Image Stream </h1>
+  </div>
+  <div style="width:100%; padding: 20px; overflow-y: scroll;">
+    <div class="6u$ 12u$(medium)">
+      <img id="image" alt="Looking for image..." />
+    </div>
+    <div class="message">
+      <p>Use WASD keys to go front, left, back, right. Use arrow keys to go up, down, turn left, turn right</p>
+    </div>
+  </div>
+
+  <script>
+    var ws = new WebSocket("ws://54.183.113.66:8888/websocket");
+
+    // Throttle, Yaw, Pitch, Roll
+    var controlSignal = {
+      throttle: 0,
+      yaw: 0,
+      pitch: 0,
+      roll: 0
+    };
+
+    document.onkeydown = function(event) {
+      switch (event.keyCode) {
+        case 37: // Left arrow key pressed
+          break;
+        case 38: // Up arrow key pressed
+          controlSignal.throttle++;
+          break;
+        case 39: // Right arrow key pressed
+          break;
+        case 40: // Down arrow key pressed
+          break;
+      }
+      ws.send(JSON.stringify(controlSignal));
+    };
+
+    document.onkeyup = function(event) {
+      switch (event.keyCode) {
+        case 37:
+          break;
+        case 38:
+          controlSignal.throttle = 0;
+          break;
+        case 39:
+          break;
+        case 40:
+          break;
+      }
+      ws.send(JSON.stringify(controlSignal));
+    };
+
+    ws.onmessage = function(evt) {
+      var image = document.getElementById('image');
+      image.src = 'data:image/jpeg;base64,' + evt.data;
+    };
+  </script>
+</body>
+
 </html>
