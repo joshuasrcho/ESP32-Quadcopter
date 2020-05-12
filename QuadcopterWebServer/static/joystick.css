@@ -39,10 +39,18 @@ body {
 
 .image-box {
   display: block;
-  width: 90%;
-  height: 80%;
+  width: 350px;
+  height: 300px;
   margin: 5% auto;
   background-color: lightblue;
+}
+
+#image {
+  display: block;
+  width:350px;
+  height: 300px;
+  margin: 0 auto;
+
 }
 
 .data {
@@ -70,9 +78,9 @@ body {
 }
 
 #joystick1 {
-  border: 5px solid #FF0000;
+  border: 5px solid #9c9c9c;
 }
 
 #joystick2 {
-  border: 5px solid #FF0000;
+  border: 5px solid #9c9c9c;
 }

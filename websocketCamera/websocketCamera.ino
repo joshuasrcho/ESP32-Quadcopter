@@ -27,36 +27,36 @@ using namespace websockets;
 WebsocketsClient client;
 
 void onMessageCallback(WebsocketsMessage message) {
-    ;
-    //Serial.print("Got Message: ");
-    //Serial.println(message.data());
+  ;
+  //Serial.print("Got Message: ");
+  //Serial.println(message.data());
 }
 
 void onEventsCallback(WebsocketsEvent event, String data) {
-    if(event == WebsocketsEvent::ConnectionOpened) {
-        Serial.println("Connnection Opened");
-        wsConnected = true;
-    } else if(event == WebsocketsEvent::ConnectionClosed) {
-        Serial.println("Connnection Closed");
-        wsConnected = false;
-    } else if(event == WebsocketsEvent::GotPing) {
-        Serial.println("Got a Ping!");
-    } else if(event == WebsocketsEvent::GotPong) {
-        Serial.println("Got a Pong!");
-    }
+  if (event == WebsocketsEvent::ConnectionOpened) {
+    Serial.println("Connnection Opened");
+    wsConnected = true;
+  } else if (event == WebsocketsEvent::ConnectionClosed) {
+    Serial.println("Connnection Closed");
+    wsConnected = false;
+  } else if (event == WebsocketsEvent::GotPing) {
+    Serial.println("Got a Ping!");
+  } else if (event == WebsocketsEvent::GotPong) {
+    Serial.println("Got a Pong!");
+  }
 }
 
-void connectWS(){
+void connectWS() {
   // Connect to server
   client.connect(SERVER_NAME);
 
   Serial.println("Connected to Wifi, Connecting to server.");
   // try to connect to Websockets server
   bool connected = client.connect(SERVER_NAME);
-  if(connected) {
-      Serial.println("Connected!");
+  if (connected) {
+    Serial.println("Connected!");
   } else {
-      Serial.println("Not Connected!");
+    Serial.println("Not Connected!");
   }
 
   // Setup Callbacks
@@ -64,20 +64,20 @@ void connectWS(){
   client.onEvent(onEventsCallback);
 }
 
-void connectWifi(){
+void connectWifi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("Connecting");
-  while(WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   Serial.println("");
   Serial.print("Connected to WiFi network with IP Address: ");
   Serial.println(WiFi.localIP());
-  
+
 }
 
-void initCamera(){
+void initCamera() {
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -98,9 +98,9 @@ void initCamera(){
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
-  config.pixel_format = PIXFORMAT_JPEG; 
-  
-  if(psramFound()){
+  config.pixel_format = PIXFORMAT_JPEG;
+
+  if (psramFound()) {
     config.frame_size = FRAMESIZE_QVGA; // FRAMESIZE_ + QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
     config.jpeg_quality = 10;
     config.fb_count = 2;
@@ -118,7 +118,7 @@ void initCamera(){
   }
 }
 
-void captureImage(){
+void captureImage() {
   // Take Picture with Camera
   fb = esp_camera_fb_get();
   if (!fb) {
@@ -127,21 +127,21 @@ void captureImage(){
   }
 }
 
-void postImage(){
+void postImage() {
   // Publish picture
   uint8_t * jpg_buf = fb->buf;
   size_t length = fb->len;
   Serial.println("buffer is " + String(length) + " bytes");
-  char * part_buf[64]; 
-  
-  client.sendBinary((const char*)jpg_buf,length);
+  char * part_buf[64];
 
-  if(fb){
+  client.sendBinary((const char*)jpg_buf, length);
+
+  if (fb) {
     esp_camera_fb_return(fb);
     fb = NULL;
     jpg_buf = NULL;
-  } 
-  else if(jpg_buf){
+  }
+  else if (jpg_buf) {
     free(jpg_buf);
     jpg_buf = NULL;
   }
@@ -153,15 +153,15 @@ void setup() {
   connectWifi();
   connectWS();
   initCamera();
-  }
+}
 
 void loop() {
-  if(WiFi.status()== WL_CONNECTED){
-    if (wsConnected){
+  if (WiFi.status() == WL_CONNECTED) {
+    if (wsConnected) {
       captureImage();
-      postImage(); 
+      postImage();
     }
-    else{
+    else {
       connectWS();
     }
   }

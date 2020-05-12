@@ -13,8 +13,8 @@
 
 <body>
   <div class="header">
-    <button onclick="openFullscreen();">Fullscreen</button>
-    
+    <button id="fullscreenBtn">Open Fullscreen</button>
+
   </div>
 
 
@@ -27,7 +27,7 @@
         Y <input id="joy1Y" type="text" />
       </div>
       <div class="buttons">
-        <button type="button" name="arm" style="width:100px;height:50px;font-size:24px;">Arm</button><br>
+        <button type="button" id="arm" style="width:100px;height:50px;font-size:24px;">Arm</button><br>
       </div>
 
     </div>
@@ -44,7 +44,7 @@
         Y <input id="joy2Y" type="text" />
       </div>
       <div class="buttons">
-        <button type="button" name="stop" style="width:100px;height:50px;font-size:24px;">Stop</button>
+        <button type="button" id="followBtn" style="width:100px;height:50px;font-size:24px;">Follow</button>
       </div>
     </div>
   </div>
@@ -66,7 +66,8 @@
       throttle: 0,
       yaw: 0,
       pitch: 0,
-      roll: 0
+      roll: 0,
+      active: false
     };
 
     var joy1Param = {
@@ -86,7 +87,7 @@
       "title": "joystick2",
       "internalFillColor": '#f09567',
       "externalStrokeColor": '#f09567',
-      "autoReturnToCenter": true
+      "autoReturnToCenter": false
     };
     var Joy2 = new JoyStick('joy2Div', joy2Param);
 
@@ -102,21 +103,64 @@
       joy1Y.value = Joy1.GetY();
       joy2X.value = Joy2.GetX();
       joy2Y.value = Joy2.GetY();
-
-      controlSignal.roll = Joy1.GetX();
-      controlSignal.pitch = Joy1.GetY();
-      controlSignal.yaw = Joy2.GetX();
-      controlSignal.throttle = Joy2.GetY();
-
+      if (armed){
+        controlSignal.roll = Joy1.GetX();
+        controlSignal.pitch = Joy1.GetY();
+        controlSignal.yaw = Joy2.GetX();
+        controlSignal.throttle = Joy2.GetY()+100;
+        controlSignal.active = true;
+      }else{
+        controlSignal.roll = 0;
+        controlSignal.pitch = 0;
+        controlSignal.yaw = 0;
+        controlSignal.throttle = 0;
+        controlSignal.active = false;
+      }
       ws.send(JSON.stringify(controlSignal));
     }, 50);
 
-
+    // **********************************************
+    // Arm/Disarm safety feature
+    // **********************************************
+    var armBtn = document.getElementById('arm');
+    var armed = false;
+    armBtn.onclick = function() {
+      if (armed) {
+        document.getElementById("joystick1").style.border = "5px solid #9c9c9c";
+        document.getElementById("joystick2").style.border = "5px solid #9c9c9c";
+        armBtn.textContent = "Arm";
+      } else {
+        if(Joy2.GetY() == -100){
+          document.getElementById("joystick1").style.border = "5px solid #FF0000";
+          document.getElementById("joystick2").style.border = "5px solid #FF0000";
+          armBtn.textContent = "Disarm";
+        }
+        else{
+          alert("Cannot arm quadcopter. Make sure the right joystick is completely down.")
+          return;
+        }
+      }
+    armed = !armed;
+    };
 
     // **********************************************
     // Fullscreen
     // **********************************************
     /* Get the documentElement (<html>) to display the page in fullscreen */
+
+    var fullscreenBtn = document.getElementById('fullscreenBtn');
+    var fsState = false;
+    fullscreenBtn.onclick = function() {
+      if (fsState) {
+        closeFullscreen();
+        fullscreenBtn.textContent = "Open Fullscreen";
+      } else {
+        openFullscreen();
+        fullscreenBtn.textContent = "Close Fullscreen";
+      }
+      fsState = !fsState;
+    };
+
     var elem = document.documentElement;
 
     /* View in fullscreen */

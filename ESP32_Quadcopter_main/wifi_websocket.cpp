@@ -8,7 +8,7 @@ using namespace websockets;
 
 WebsocketsClient client;
 bool wsConnected;
-int controlReference[4]; // throttle, yaw, pitch, roll
+int controlReference[5]; // throttle, yaw, pitch, roll
 
 void connectWifi(){
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -33,6 +33,7 @@ void onMessageCallback(WebsocketsMessage message) {
     controlReference[1] = doc["yaw"];
     controlReference[2] = doc["pitch"];
     controlReference[3] = doc["roll"];
+    controlReference[4] = doc["active"];
 }
 
 void onEventsCallback(WebsocketsEvent event, String data) {
@@ -58,6 +59,9 @@ void connectWebsocket(){
   bool connected = client.connect(SERVER_NAME);
   if(connected) {
       Serial.println("Connected!");
+      for(int i=0;i<5;i++){
+        controlReference[i] = 0;
+      }
   } else {
       Serial.println("Not Connected!");
   }
@@ -67,8 +71,14 @@ void connectWebsocket(){
   client.onEvent(onEventsCallback);
 }
 
-void pollWebsocket(){
-  client.poll(); // Get ready to receive next message
+bool pollWebsocket(){
+  if (client.available()){
+    client.poll(); // Get ready to receive next message
+    return true;  
+  }
+  else{
+    return false;
+  }
 }
 
 int* getControlReference(){

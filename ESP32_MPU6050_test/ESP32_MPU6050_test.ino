@@ -90,6 +90,8 @@ uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
+int16_t gx, gy, gz;
+
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
@@ -268,6 +270,13 @@ void loop() {
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+            mpu.getRotation(&gx,&gy,&gz);
+            Serial.print(gx/32.8);
+             Serial.print("\t");
+            Serial.print(gy/32.8);
+             Serial.print("\t");
+            Serial.print(gz/32.8);
+             Serial.print("\t");
             Serial.print("ypr\t");
             Serial.print(ypr[0] * 180/M_PI);
             Serial.print("\t");

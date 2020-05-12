@@ -20,14 +20,19 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def open(self):
-        self.connections.add(self)
+        # close if another controller is already connected
+        if (len(self.connections)>0):
+            self.close()
+        else:
+            self.connections.add(self)
 
     def on_message(self, message):
         [client.write_message(message) for client in FlightWSHandler.connections]
         print(message)
 
     def on_close(self):
-        self.connections.remove(self)
+        if self in self.connections:
+            self.connections.remove(self)
 
 class CameraWSHandler(tornado.websocket.WebSocketHandler):
     connections = set()
@@ -35,14 +40,19 @@ class CameraWSHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def open(self):
-        self.connections.add(self)
+        # close if another controller is already connected
+        if (len(self.connections)>0):
+            self.close()
+        else:
+            self.connections.add(self)
 
     def on_message(self, message):
         base64Message = base64.b64encode(message)
         [client.write_message(base64Message) for client in WSHandler.connections]
 
     def on_close(self):
-        self.connections.remove(self)
+        if self in self.connections:
+            self.connections.remove(self)
 
 class FlightWSHandler(tornado.websocket.WebSocketHandler):
     connections = set()
@@ -50,13 +60,18 @@ class FlightWSHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def open(self):
-        self.connections.add(self)
+        # close if another controller is already connected
+        if (len(self.connections)>0):
+            self.close()
+        else:
+            self.connections.add(self)
 
     def on_message(self, message):
         pass
 
     def on_close(self):
-        self.connections.remove(self)
+        if self in self.connections:
+            self.connections.remove(self)
 
 def make_app():
     return tornado.web.Application([

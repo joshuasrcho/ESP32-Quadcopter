@@ -3,7 +3,7 @@
 
 void connectWifi();
 void connectWebsocket();
-void pollWebsocket();
+bool pollWebsocket();
 int* getControlReference();
 
 #endif

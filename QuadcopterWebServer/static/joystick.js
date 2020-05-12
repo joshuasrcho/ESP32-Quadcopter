@@ -181,6 +181,8 @@ var JoyStick = (function(container, parameters) {
     if (autoReturnToCenter) {
       movedX = centerX;
       movedY = centerY;
+    }else{
+      movedX = centerX;
     }
     // Delete canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -265,7 +267,7 @@ var JoyStick = (function(container, parameters) {
    * @return Integer from -100 to +100
    */
   this.GetX = function() {
-    return (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+    return Math.round(100 * ((movedX - centerX) / maxMoveStick));
   };
 
   /**
@@ -273,7 +275,7 @@ var JoyStick = (function(container, parameters) {
    * @return Integer from -100 to +100
    */
   this.GetY = function() {
-    return ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
+    return Math.round(-100 * ((movedY - centerY) / maxMoveStick));
   };
 
   /**
