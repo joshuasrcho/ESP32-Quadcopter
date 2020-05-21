@@ -22,7 +22,6 @@
     <div class="columnLeft">
       <div id="joy1Div"></div>
       <div class="data">
-        Dir <input id="joy1Direction" type="text" /><br />
         X <input id="joy1X" type="text" /></br>
         Y <input id="joy1Y" type="text" />
       </div>
@@ -39,7 +38,6 @@
     <div class="columnRight">
       <div id="joy2Div"></div>
       <div class="data">
-        Dir <input id="joy2Direction" type="text" /><br />
         X <input id="joy2X" type="text" /></br>
         Y <input id="joy2Y" type="text" />
       </div>
@@ -78,7 +76,6 @@
     };
     var Joy1 = new JoyStick('joy1Div', joy1Param);
 
-    var joy1Direction = document.getElementById("joy1Direction");
     var joy1X = document.getElementById("joy1X");
     var joy1Y = document.getElementById("joy1Y");
 
@@ -91,25 +88,32 @@
     };
     var Joy2 = new JoyStick('joy2Div', joy2Param);
 
-    var joy2Direction = document.getElementById("joy2Direction");
     var joy2X = document.getElementById("joy2X");
     var joy2Y = document.getElementById("joy2Y");
 
 
     setInterval(function() {
-      joy1Direction.value = Joy1.GetDir();
-      joy2Direction.value = Joy2.GetDir();
+
       joy1X.value = Joy1.GetX();
       joy1Y.value = Joy1.GetY();
       joy2X.value = Joy2.GetX();
       joy2Y.value = Joy2.GetY();
-      if (armed){
+      if (armed) {
         controlSignal.roll = Joy1.GetX();
         controlSignal.pitch = Joy1.GetY();
         controlSignal.yaw = Joy2.GetX();
-        controlSignal.throttle = Joy2.GetY()+100;
+        if (Math.abs(controlSignal.roll) < 20) {
+          controlSignal.roll = 0;
+        }
+        if (Math.abs(controlSignal.pitch) < 20) {
+          controlSignal.pitch = 0;
+        }
+        if (Math.abs(controlSignal.yaw) < 20) {
+          controlSignal.yaw = 0;
+        }
+        controlSignal.throttle = Joy2.GetY() + 100;
         controlSignal.active = true;
-      }else{
+      } else {
         controlSignal.roll = 0;
         controlSignal.pitch = 0;
         controlSignal.yaw = 0;
@@ -130,17 +134,16 @@
         document.getElementById("joystick2").style.border = "5px solid #9c9c9c";
         armBtn.textContent = "Arm";
       } else {
-        if(Joy2.GetY() == -100){
+        if (Joy2.GetY() == -100) {
           document.getElementById("joystick1").style.border = "5px solid #FF0000";
           document.getElementById("joystick2").style.border = "5px solid #FF0000";
           armBtn.textContent = "Disarm";
-        }
-        else{
+        } else {
           alert("Cannot arm quadcopter. Make sure the right joystick is completely down.")
           return;
         }
       }
-    armed = !armed;
+      armed = !armed;
     };
 
     // **********************************************
