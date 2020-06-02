@@ -53,10 +53,10 @@ void updateSignal() {
 void readJoystick() {
   ref_array = getControlReference();
 
-  ref_throttle = map(ref_array[0], 0, 300, 1050, 1950);
-  ref_yaw = map(ref_array[1], -150, 150, 1050, 1950);
-  ref_pitch = map(ref_array[2], -150, 150, 1050, 1950);
-  ref_roll = map(ref_array[3], -150, 150, 1050, 1950);
+  ref_throttle = map(ref_array[0], 0, 200, 1050, 1950);
+  ref_yaw = map(ref_array[1], -100, 100, 1050, 1950);
+  ref_pitch = map(ref_array[2], -100, 100, 1050, 1950);
+  ref_roll = map(ref_array[3], -100, 100, 1050, 1950);
   controller_active = ref_array[4];
 
 }
