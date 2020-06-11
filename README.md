@@ -1,4 +1,4 @@
-ESP32-based flight controller!\
+ESP32-based quadcopter flight controller!\
 https://hackaday.io/project/172293-esp32-quadcopter
 
 ### ESP-Quadcopter_main
