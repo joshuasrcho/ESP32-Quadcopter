@@ -111,6 +111,7 @@ class FlightWSHandler(tornado.websocket.WebSocketHandler):
 def track(frame):
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    hsv[...,1] = hsv[...,1]*1
     # construct a mask for the color "orange", then perform
     # a series of dilations and erosions to remove any small
     # blobs left in the mask
@@ -145,7 +146,7 @@ def track(frame):
 
             # use triangle similarity to determine current distance from camera
             z = int(ballDiameter * focalLength / (radius*2))
-            message = "X: " + str(center[0]) + " Y: " + str(center[1]) + " Z: " + str(z)
+            message = "X: " + str(center[0]-120) + " Y: " + str(center[1]-80) + " Z: " + str(z)
             cv2.putText(frame, message, (10, 20), cv2.FONT_HERSHEY_SIMPLEX,
                         0.5, (0, 0, 255), 2)
 

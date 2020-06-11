@@ -42,7 +42,7 @@
         Y <input id="joy2Y" type="text" />
       </div>
       <div class="buttons">
-        <button type="button" id="followBtn" style="width:100px;height:50px;font-size:24px;">Follow</button>
+        <button type="button" id="follow" style="width:100px;height:50px;font-size:24px;">Follow</button>
       </div>
     </div>
   </div>
@@ -65,7 +65,8 @@
       yaw: 0,
       pitch: 0,
       roll: 0,
-      active: false
+      active: false,
+      follow: false
     };
 
     var joy1Param = {
@@ -91,38 +92,6 @@
     var joy2X = document.getElementById("joy2X");
     var joy2Y = document.getElementById("joy2Y");
 
-
-    setInterval(function() {
-
-      joy1X.value = Joy1.GetX();
-      joy1Y.value = Joy1.GetY();
-      joy2X.value = Joy2.GetX();
-      joy2Y.value = Joy2.GetY();
-      if (armed) {
-        controlSignal.roll = Joy1.GetX();
-        controlSignal.pitch = Joy1.GetY();
-        controlSignal.yaw = Joy2.GetX();
-        if (Math.abs(controlSignal.roll) < 20) {
-          controlSignal.roll = 0;
-        }
-        if (Math.abs(controlSignal.pitch) < 20) {
-          controlSignal.pitch = 0;
-        }
-        if (Math.abs(controlSignal.yaw) < 20) {
-          controlSignal.yaw = 0;
-        }
-        controlSignal.throttle = Joy2.GetY() + 100;
-        controlSignal.active = true;
-      } else {
-        controlSignal.roll = 0;
-        controlSignal.pitch = 0;
-        controlSignal.yaw = 0;
-        controlSignal.throttle = 0;
-        controlSignal.active = false;
-      }
-      ws.send(JSON.stringify(controlSignal));
-    }, 50);
-
     // **********************************************
     // Arm/Disarm safety feature
     // **********************************************
@@ -145,6 +114,73 @@
       }
       armed = !armed;
     };
+
+    // **********************************************
+    // Follow mode feature
+    // **********************************************
+    var followBtn = document.getElementById('follow');
+    var following = false;
+    followBtn.onclick = function() {
+      if (following) {
+        followBtn.textContent = "Follow";
+      } else {
+        if (armed) {
+          followBtn.textContent = "Stop"
+        } else {
+          alert("Cannot follow. Make sure the quadcopter is armed and flying")
+          return;
+        }
+
+      }
+      following = !following
+    }
+
+    // **********************************************
+    // Send message
+    // **********************************************
+    setInterval(function() {
+
+      joy1X.value = Joy1.GetX();
+      joy1Y.value = Joy1.GetY();
+      joy2X.value = Joy2.GetX();
+      joy2Y.value = Joy2.GetY();
+      if (armed) {
+        controlSignal.active = true;
+        if (following) {
+          controlSignal.follow = true;
+          controlSignal.roll = 0;
+          controlSignal.pitch = 0;
+          controlSignal.yaw = 0;
+          controlSignal.throttle = 0;
+
+        } else {
+          controlSignal.follow = false;
+          controlSignal.roll = Joy1.GetX();
+          controlSignal.pitch = Joy1.GetY();
+          controlSignal.yaw = Joy2.GetX();
+          if (Math.abs(controlSignal.roll) < 20) {
+            controlSignal.roll = 0;
+          }
+          if (Math.abs(controlSignal.pitch) < 20) {
+            controlSignal.pitch = 0;
+          }
+          if (Math.abs(controlSignal.yaw) < 20) {
+            controlSignal.yaw = 0;
+          }
+          controlSignal.throttle = Joy2.GetY() + 100;
+        }
+      } else {
+        controlSignal.follow = false;
+        controlSignal.active = false;
+        controlSignal.roll = 0;
+        controlSignal.pitch = 0;
+        controlSignal.yaw = 0;
+        controlSignal.throttle = 0;
+
+      }
+      ws.send(JSON.stringify(controlSignal));
+    }, 50);
+
 
     // **********************************************
     // Fullscreen

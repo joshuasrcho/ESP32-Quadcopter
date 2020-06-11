@@ -34,6 +34,7 @@ void onMessageCallback(WebsocketsMessage message) {
     controlReference[2] = doc["pitch"];
     controlReference[3] = doc["roll"];
     controlReference[4] = doc["active"];
+    controlReference[5] = doc["follow"];
 }
 
 void onEventsCallback(WebsocketsEvent event, String data) {

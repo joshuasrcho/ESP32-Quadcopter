@@ -17,6 +17,7 @@ const int ref_roll_pin = 32;
 const int flight_mode = 19;
 
 int controller_active;
+int controller_follow;
 
 // Reference values received from the server
 int* ref_array; //array that will hold four joystick outputs. throttle, yaw, pitch, roll.
@@ -27,20 +28,23 @@ float ref_throttle,
 
 void updateSignal() {
   if (controller_active) {
+    if (controller_follow) {
+      Serial.println("Following...");
+    }
+    else {
+      Serial.print("throttle: "); Serial.print(ref_throttle);
+      Serial.print(" yaw: "); Serial.print(ref_yaw);
+      Serial.print(" pitch: "); Serial.print(ref_pitch);
+      Serial.print(" roll: "); Serial.println(ref_roll);
 
-    Serial.print("throttle "); Serial.print(ref_throttle);
-    Serial.print("yaw"); Serial.print(ref_yaw);
-    Serial.print("pitch"); Serial.print(ref_pitch);
-    Serial.print("roll"); Serial.println(ref_roll);
 
+      //write
+      throttle.writeMicroseconds(ref_throttle);
+      yaw.writeMicroseconds(ref_yaw);
+      pitch.writeMicroseconds(ref_pitch);
+      roll.writeMicroseconds(ref_roll);
+    }
 
-    //write
-    throttle.writeMicroseconds(ref_throttle);
-    yaw.writeMicroseconds(ref_yaw);
-    pitch.writeMicroseconds(ref_pitch);
-    roll.writeMicroseconds(ref_roll);
-
-  
   }
   else {
     Serial.println("Disarmed. Shutting off motors..");
@@ -52,12 +56,13 @@ void updateSignal() {
 
 void readJoystick() {
   ref_array = getControlReference();
-
+  controller_active = ref_array[4];
+  controller_follow = ref_array[5];
   ref_throttle = map(ref_array[0], 0, 200, 1050, 1950);
   ref_yaw = map(ref_array[1], -100, 100, 1050, 1950);
   ref_pitch = map(ref_array[2], -100, 100, 1050, 1950);
   ref_roll = map(ref_array[3], -100, 100, 1050, 1950);
-  controller_active = ref_array[4];
+
 
 }
 
@@ -66,7 +71,7 @@ void setup() {
   Serial.begin(115200);
   connectWifi();
   connectWebsocket();
-  pinMode(led,OUTPUT);
+  pinMode(led, OUTPUT);
   throttle.attach(ref_throttle_pin); //Generate PWM in pin 9 of Arduino
   yaw.attach(ref_yaw_pin);
   pitch.attach(ref_pitch_pin);
@@ -84,7 +89,7 @@ void loop() {
   controller_active = false;
   if (WiFi.status() == WL_CONNECTED) {
     if (pollWebsocket()) {
-      digitalWrite(led,HIGH);
+      digitalWrite(led, HIGH);
       readJoystick();
 
       /*
@@ -101,12 +106,12 @@ void loop() {
         RRESC.writeMicroseconds(ref_throttle);*/
     }
     else {
-      digitalWrite(led,LOW);
+      digitalWrite(led, LOW);
       connectWebsocket();
     }
   }
   else {
-    digitalWrite(led,LOW);
+    digitalWrite(led, LOW);
     connectWifi();
     connectWebsocket();
   }
